@@ -1,0 +1,52 @@
+
+body,
+h3,
+div {
+    padding: 0;
+    margin: 0;
+}
+
+.clearfix:after {
+    content: '';
+    height: 0;
+    clear: both;
+    overflow: hidden;
+    visibility: hidden;
+    display: block;
+}
+
+.clearfix {
+    *zoom: 1;
+}
+
+.game-name {
+    padding: 5px 0 5px 190px;
+}
+
+.wrapper-cav {
+    width: 640px;
+    height: 640px;
+    float: left;
+    position: relative;
+}
+
+.wrapper-cav #cav-bg,
+.wrapper-cav #cav-chess {
+    position: absolute;
+    left: 0;
+    top: 0;
+}
+
+.wrapper-cav #cav-chess {
+    z-index: 100;
+}
+
+.wrapper-button {
+    padding-left: 10px;
+    float: left;
+}
+
+.wrapper-button button {
+    margin-bottom: 10px;
+    display: block;
+}
