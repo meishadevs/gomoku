@@ -25,9 +25,6 @@ var actions;
 //记录悔了几步棋
 var backActionNum;
 
-//标记是否悔棋
-var isBack;
-
 //0 表示没有棋子
 const NO_CHESS = 0;
 
@@ -40,6 +37,12 @@ const WHITE_CHESS = 2;
 //每一行上只能下15个棋子
 //每一列上也只能下15个棋子
 var NUM_CHESS = 15;
+
+//棋子图片的宽度
+var IMAGE_WIDTH = 36;
+
+//棋子图片的高度
+var IMAGE_HEIGHT = 36;
 
 function startLoad() {
 
@@ -73,9 +76,6 @@ function initData() {
 
     //初始化时没有悔棋
     backActionNum = 0;
-
-    //初始化时没有悔棋
-    isBack = false;
 
     //创建数组，存储棋子的位置信息
     chessData = new Array(NUM_CHESS);
@@ -114,12 +114,12 @@ function drawRect() {
 function addEventListener() {
     var btnRestart = document.getElementById('restart');
     var backBtn = document.getElementById('backBtn');
-    var btnCancelChess = document.getElementById('cancelChessBtn');
+    var revokeBackBtn = document.getElementById('revokeBackBtn');
 
     cavChess.addEventListener('mousedown', play);
     btnRestart.addEventListener('click', restart);
-    backBtn.addEventListener('click', backAttch);
-    btnCancelChess.addEventListener('click', cancelChess);
+    backBtn.addEventListener('click', back);
+    revokeBackBtn.addEventListener('click', revokeBack);
 }
 
 
@@ -166,17 +166,14 @@ function play(event) {
     if (isWhite) {
 
         //绘制白棋
-        drawChess(WHITE_CHESS, x, y);
+        drawChess(WHITE_CHESS, x, y, false);
 
     //如果当前用户下的是黑棋
     } else {
 
         //绘制黑棋
-        drawChess(BLACK_CHESS, x, y);
+        drawChess(BLACK_CHESS, x, y, false);
     }
-
-    //每当下完一颗棋子后，改变下一颗棋子的颜色
-    isWhite = !isWhite;
 }
 
 
@@ -185,8 +182,9 @@ function play(event) {
  * @param chessType 棋子的类型
  * @param x 棋子的 x 坐标
  * @param y 棋子的 y 坐标
+ * @param isBack 标记当前是否处于悔棋状态
  */
-function drawChess(chessType, x, y) {
+function drawChess(chessType, x, y, isBack) {
 
     //如果赢了
     if (isWin) {
@@ -198,19 +196,26 @@ function drawChess(chessType, x, y) {
     if (chessType == WHITE_CHESS) {
 
         //绘制白棋
-        contextChess.drawImage(imageWhite, x * 40 + 40 - 20, y * 40 + 40 - 20);
+        contextChess.drawImage(imageWhite, x * 40 + 40 - 20, y * 40 + 40 - 20, IMAGE_WIDTH, IMAGE_HEIGHT);
         chessData[x][y] = WHITE_CHESS;
 
     //如果棋子的类型为黑棋
     } else {
 
         //绘制黑棋
-        contextChess.drawImage(imageBlack, x * 40 + 40 - 20, y * 40 + 40 - 20);
+        contextChess.drawImage(imageBlack, x * 40 + 40 - 20, y * 40 + 40 - 20, IMAGE_WIDTH, IMAGE_HEIGHT);
         chessData[x][y] = BLACK_CHESS;
     }
 
-    //将每一步棋子的信息存储到actions数组中
-    actions.push({x: x, y: y, chessType: chessType});
+    //如果当前不处于悔棋状态
+    if (!isBack) {
+
+        //将每一步棋子的信息存储到actions数组中
+        actions.push({x: x, y: y, chessType: chessType});
+    }
+
+    //每当下完一颗棋子后，改变下一颗棋子的颜色
+    isWhite = !isWhite;
 
     //判断输赢
     judge(x, y, chessType);
@@ -321,18 +326,9 @@ function restart() {
         isWhite = false;
         isWin = false;
         actions = [];
-        isBack = false;
         backActionNum = 0;
         contextChess.clearRect(0, 0, cavChess.offsetWidth, cavChess.offsetHeight);
     }
-}
-
-
-/**
- * 触发悔棋
- */
-function backAttch() {
-    back();
 }
 
 
@@ -343,11 +339,9 @@ function back() {
 
     var backAction = null;
 
-    //标记当前处于悔棋状态
-    isBack = true;
-
     //当棋盘上有棋子才能悔棋
-    if (actions.length <= 0) {
+    //或者游戏还没赢的时候才能悔棋
+    if (actions.length <= 0 || isWin) {
         return;
     }
 
@@ -376,12 +370,36 @@ function back() {
 
     chessData[x][y] = 0;
     isWhite = color == WHITE_CHESS ? true : false;
-    contextChess.clearRect(x * 40 + 40 - 20, y * 40 + 40 - 20, 36, 36);
+    contextChess.clearRect(x * 40 + 40 - 20, y * 40 + 40 - 20, IMAGE_WIDTH, IMAGE_HEIGHT);
 }
+
 
 /**
  * 撤销悔棋
  */
-function cancelChess() {
-    console.log('撤销悔棋');
+function revokeBack() {
+
+    var backAction = null;
+
+    //如果悔棋步数小于1或者有一方赢了，就不往下执行
+    if (backActionNum < 1 || isWin) {
+        return;
+    }
+
+    //如果只悔一步棋
+    if (backActionNum == 1) {
+        backAction = actions.slice(-backActionNum);
+
+        //悔多步棋
+    } else {
+        backAction = actions.slice(-backActionNum, -backActionNum + 1);
+    }
+
+    //悔棋步数减1
+    backActionNum--;
+
+    var x = backAction[0].x;
+    var y = backAction[0].y;
+    var color = backAction[0].chessType;
+    drawChess(color, x, y, true);
 }
