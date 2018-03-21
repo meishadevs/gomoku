@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>五子棋游戏</title>
+    <title>JavaScript版五子棋游戏</title>
     <link rel="stylesheet" type="text/css" href="./css/index.css">
 </head>
 <body onload="startLoad()">
@@ -10,13 +10,13 @@
         <h3 class="game-name">JavaScript版五子棋游戏</h3>
         <div class="wrapper clearfix">
             <div class="wrapper-cav">
-                <canvas id="cav-bg" width="640px" height="640px"></canvas>
-                <canvas id="cav-chess" width="640px" height="640px" onmousedown="play(event)"></canvas>
+                <canvas id="cavBg" width="640px" height="640px"></canvas>
+                <canvas id="cavChess" width="640px" height="640px"></canvas>
             </div>
             <div class="wrapper-button">
-                <button id="restart" onclick="restart()">重新开始</button>
-                <button id="regret-chess" onclick="regretChess()">悔棋</button>
-                <button id="cancel-chess" onclick="cancelChess()">撤销悔棋</button>
+                <button id="restart">重新开始</button>
+                <button id="backBtn">悔棋</button>
+                <button id="cancelChessBtn">撤销悔棋</button>
             </div>
         </div>
     </div>

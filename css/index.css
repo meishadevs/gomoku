@@ -30,14 +30,14 @@ div {
     position: relative;
 }
 
-.wrapper-cav #cav-bg,
-.wrapper-cav #cav-chess {
+.wrapper-cav #cavBg,
+.wrapper-cav #cavChess {
     position: absolute;
     left: 0;
     top: 0;
 }
 
-.wrapper-cav #cav-chess {
+.wrapper-cav #cavChess {
     z-index: 100;
 }
 

@@ -1,23 +1,32 @@
 
-let cavBg;
-let cavChess;
-let contextBg;
-let contextChess;
+var cavBg;
+var cavChess;
+var contextBg;
+var contextChess;
 
 //用于设置当前是否轮到白棋
-let isWhite;
+var isWhite;
 
 //用于设置当前局棋是否赢了
-let isWin;
+var isWin;
 
 //白棋图片
-let imageWhite;
+var imageWhite;
 
 //黑棋图片
-let imageBlack;
+var imageBlack;
 
 //用于保存棋盘信息的二维数组
-let chessData;
+var chessData;
+
+//记录每一步棋子的信息
+var actions;
+
+//记录悔了几步棋
+var backActionNum;
+
+//标记是否悔棋
+var isBack;
 
 //0 表示没有棋子
 const NO_CHESS = 0;
@@ -30,7 +39,7 @@ const WHITE_CHESS = 2;
 
 //每一行上只能下15个棋子
 //每一列上也只能下15个棋子
-let NUM_CHESS = 15;
+var NUM_CHESS = 15;
 
 function startLoad() {
 
@@ -39,6 +48,9 @@ function startLoad() {
 
     //绘制棋盘
     drawRect();
+
+    //添加事件监听
+    addEventListener();
 }
 
 
@@ -56,13 +68,22 @@ function initData() {
     imageBlack = new Image();
     imageBlack.src = "./images/black.png";
 
+    //创建数组，记录每一步棋子的信息
+    actions = [];
+
+    //初始化时没有悔棋
+    backActionNum = 0;
+
+    //初始化时没有悔棋
+    isBack = false;
+
     //创建数组，存储棋子的位置信息
     chessData = new Array(NUM_CHESS);
 
     //初始化二维数组
-    for (let x = 0; x < NUM_CHESS; x++) {
+    for (var x = 0; x < NUM_CHESS; x++) {
         chessData[x] = new Array(NUM_CHESS);
-        for (let y = 0; y < NUM_CHESS; y++) {
+        for (var y = 0; y < NUM_CHESS; y++) {
             chessData[x][y] = NO_CHESS;
         }
     }
@@ -72,8 +93,8 @@ function initData() {
 //绘制棋盘
 function drawRect() {
 
-    cavBg = document.getElementById("cav-bg");
-    cavChess = document.getElementById("cav-chess");
+    cavBg = document.getElementById("cavBg");
+    cavChess = document.getElementById("cavChess");
     contextBg = cavBg.getContext("2d");
     contextChess = cavChess.getContext("2d");
 
@@ -82,10 +103,23 @@ function drawRect() {
     contextBg.fillRect(0, 0, 640, 640);
 
     //绘制构成棋盘的线段
-    for (let i = 1; i <= NUM_CHESS; i++) {
+    for (var i = 1; i <= NUM_CHESS; i++) {
         drawLine({x: 40 * i, y: 40}, {x: 40 * i, y: 600});
         drawLine({x: 40, y: 40 * i}, {x: 600, y: 40 * i});
     }
+}
+
+
+//添加事件监听
+function addEventListener() {
+    var btnRestart = document.getElementById('restart');
+    var backBtn = document.getElementById('backBtn');
+    var btnCancelChess = document.getElementById('cancelChessBtn');
+
+    cavChess.addEventListener('mousedown', play);
+    btnRestart.addEventListener('click', restart);
+    backBtn.addEventListener('click', backAttch);
+    btnCancelChess.addEventListener('click', cancelChess);
 }
 
 
@@ -112,12 +146,20 @@ function play(event) {
     //将鼠标点击的坐标转换成棋盘中的坐标
     //40表示棋盘中第一条线段的起始点与浏览器最左端的距离为40
     //75表示棋盘中第一条线段的起始点与浏览器最顶端的距离为75
-    let x = parseInt((event.clientX - 40 + 20) / 40);
-    let y = parseInt((event.clientY - 75 + 20) / 40);
+    var x = parseInt((event.clientX - 40 + 20) / 40);
+    var y = parseInt((event.clientY - 75 + 20) / 40);
 
     //确保棋子的坐标在可以下棋的范围之内
-    if (x >= NUM_CHESS || y >= NUM_CHESS || chessData[x][y] != 0) {
+    if (x >= NUM_CHESS || y >= NUM_CHESS || chessData[x][y] != NO_CHESS) {
         return;
+    }
+
+    //如果在落子之前产生了悔棋操作
+    if(backActionNum > 0) {
+
+        //清除数组中悔掉的棋子的记录
+        actions.splice(actions.length - backActionNum, backActionNum);
+        backActionNum = 0;
     }
 
     //如果当前用户下的是白棋
@@ -167,6 +209,9 @@ function drawChess(chessType, x, y) {
         chessData[x][y] = BLACK_CHESS;
     }
 
+    //将每一步棋子的信息存储到actions数组中
+    actions.push({x: x, y: y, chessType: chessType});
+
     //判断输赢
     judge(x, y, chessType);
 }
@@ -180,13 +225,13 @@ function drawChess(chessType, x, y) {
  */
 function judge(x, y, chessType) {
 
-    let count1 = 0;
-    let count2 = 0;
-    let count3 = 0;
-    let count4 = 0;
+    var count1 = 0;
+    var count2 = 0;
+    var count3 = 0;
+    var count4 = 0;
 
     //从当前所下的棋子处往左判断
-    for (let i = x; i >= 0; i--) {
+    for (var i = x; i >= 0; i--) {
         if (chessData[i][y] != chessType) {
             break;
         }
@@ -194,7 +239,7 @@ function judge(x, y, chessType) {
     }
 
     //从当前所下的棋子处往右判断
-    for (let i = x + 1; i < 15; i++) {
+    for (var i = x + 1; i < 15; i++) {
         if (chessData[i][y] != chessType) {
             break;
         }
@@ -202,7 +247,7 @@ function judge(x, y, chessType) {
     }
 
     //从当前所下的棋子处往上判断
-    for (let i = y; i >= 0; i--) {
+    for (var i = y; i >= 0; i--) {
         if (chessData[x][i] != chessType) {
             break;
         }
@@ -210,7 +255,7 @@ function judge(x, y, chessType) {
     }
 
     //从当前所下的棋子处往下判断
-    for (let i = y + 1; i < 15; i++) {
+    for (var i = y + 1; i < 15; i++) {
         if (chessData[x][i] != chessType) {
             break;
         }
@@ -218,7 +263,7 @@ function judge(x, y, chessType) {
     }
 
     //从当前所下的棋子处往左上角判断
-    for (let i = x, j = y; i >= 0 && j >= 0; i--, j--) {
+    for (var i = x, j = y; i >= 0 && j >= 0; i--, j--) {
         if (chessData[i][j] != chessType) {
             break;
         }
@@ -226,7 +271,7 @@ function judge(x, y, chessType) {
     }
 
     //从当前所下的棋子处往右下角判断
-    for (let i = x + 1, j = y + 1; i < 15 && j < 15; i++, j++) {
+    for (var i = x + 1, j = y + 1; i < 15 && j < 15; i++, j++) {
         if (chessData[i][j] != chessType) {
             break;
         }
@@ -234,7 +279,7 @@ function judge(x, y, chessType) {
     }
 
     //从当前所下的棋子处往左下角判断
-    for (let i = x, j = y; i >= 0 && j < 15; i--, j++) {
+    for (var i = x, j = y; i >= 0 && j < 15; i--, j++) {
         if (chessData[i][j] != chessType) {
             break;
         }
@@ -242,7 +287,7 @@ function judge(x, y, chessType) {
     }
 
     //从当前所下的棋子处往右上角判断
-    for (let i = x + 1, j = y - 1; i < 15 && j >= 0; i++, j--) {
+    for (var i = x + 1, j = y - 1; i < 15 && j >= 0; i++, j--) {
         if (chessData[i][j] != chessType) {
             break;
         }
@@ -268,28 +313,75 @@ function judge(x, y, chessType) {
  * 重新开始
  */
 function restart() {
-    for (let i = 0; i < NUM_CHESS; i++) {
-        for (let j = 0; j < NUM_CHESS; j++) {
+    for (var i = 0; i < NUM_CHESS; i++) {
+        for (var j = 0; j < NUM_CHESS; j++) {
             chessData[i][j] = 0;
         }
 
         isWhite = false;
         isWin = false;
+        actions = [];
+        isBack = false;
+        backActionNum = 0;
         contextChess.clearRect(0, 0, cavChess.offsetWidth, cavChess.offsetHeight);
     }
 }
 
 
 /**
- * 悔棋
+ * 触发悔棋
  */
-function regretChess() {
+function backAttch() {
+    back();
 }
 
+
+/**
+ * 悔棋
+ */
+function back() {
+
+    var backAction = null;
+
+    //标记当前处于悔棋状态
+    isBack = true;
+
+    //当棋盘上有棋子才能悔棋
+    if (actions.length <= 0) {
+        return;
+    }
+
+    //悔棋步数加1
+    backActionNum++;
+
+    //如果悔棋步数超过了棋盘上下的棋子数，不能悔棋
+    if (backActionNum > actions.length) {
+        backActionNum--;
+        return;
+    }
+
+    //如果只悔一步棋
+    if (backActionNum == 1) {
+
+        backAction = actions.slice(-backActionNum);
+
+    //悔多步棋
+    } else {
+        backAction = actions.slice(-backActionNum, -backActionNum + 1);
+    }
+
+    var x = backAction[0].x;
+    var y = backAction[0].y;
+    var color = backAction[0].chessType;
+
+    chessData[x][y] = 0;
+    isWhite = color == WHITE_CHESS ? true : false;
+    contextChess.clearRect(x * 40 + 40 - 20, y * 40 + 40 - 20, 36, 36);
+}
 
 /**
  * 撤销悔棋
  */
 function cancelChess() {
-
+    console.log('撤销悔棋');
 }
